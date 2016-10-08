@@ -56,20 +56,18 @@ open class ExtendedAttributes {
 	open subscript(key:String)->Data? {
 		get {
 			//If it's possible to get a file system representation, we'll init the data
-			var finalData:Data? = nil
-			url.withUnsafeFileSystemRepresentation({ (systemPath)->() in
+			return url.withUnsafeFileSystemRepresentation({ (systemPath)->(Data?) in
 				let bufferLength:Int = getxattr(systemPath, key, nil, 0, 0, 0)
 				if bufferLength == -1 {
-					return
+					return nil
 				}
 				let buffer:UnsafeMutableRawPointer = UnsafeMutableRawPointer.allocate(bytes: bufferLength, alignedTo:8)	//any idea of what "aligned to" means?
 				if getxattr(systemPath, key, buffer, bufferLength, 0, 0) == -1 {
 					free(buffer)
-					return
+					return nil
 				}
-				finalData = Data(bytesNoCopy: buffer, count: bufferLength, deallocator:.free)
+				return Data(bytesNoCopy: buffer, count: bufferLength, deallocator:.free)
 			})
-			return finalData
 		}
 		set (newValue) {
 			if let newData:Data = newValue {

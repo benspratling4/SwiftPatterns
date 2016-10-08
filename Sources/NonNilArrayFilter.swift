@@ -6,6 +6,12 @@
 //
 //
 
+/**
+	This is a very complex implementation of a very simple feature.
+	If you have an array of optionals, and you want an array of only the non-nil elements, unwrapped
+	call .nonNilElements on the array of optionals.  Done.
+*/
+
 //An implementation detail of .nonNilElements
 public protocol OptionalProtocolForNonNilArrayFiltering {
 	associatedtype NonNilArrayFilteringWrapped
