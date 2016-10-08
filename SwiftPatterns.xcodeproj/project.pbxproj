@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B537F0C61DA8C29900E18168 /* Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = B537F0C51DA8C29900E18168 /* Alert.swift */; };
 		B5E9387D1DA8AEAE00D0796C /* SwiftPatterns.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B5E938731DA8AEAE00D0796C /* SwiftPatterns.framework */; };
 		B5E938841DA8AEAE00D0796C /* SwiftPatterns.h in Headers */ = {isa = PBXBuildFile; fileRef = B5E938761DA8AEAE00D0796C /* SwiftPatterns.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		B5E9388F1DA8AF9E00D0796C /* ChangeSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E9388D1DA8AF9E00D0796C /* ChangeSet.swift */; };
@@ -30,6 +31,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B537F0C31DA8C0D700E18168 /* Package.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
+		B537F0C51DA8C29900E18168 /* Alert.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Alert.swift; sourceTree = "<group>"; };
 		B5E938731DA8AEAE00D0796C /* SwiftPatterns.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SwiftPatterns.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B5E938761DA8AEAE00D0796C /* SwiftPatterns.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SwiftPatterns.h; sourceTree = "<group>"; };
 		B5E938771DA8AEAE00D0796C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -67,6 +70,7 @@
 		B5E938691DA8AEAE00D0796C = {
 			isa = PBXGroup;
 			children = (
+				B537F0C31DA8C0D700E18168 /* Package.swift */,
 				B5E938751DA8AEAE00D0796C /* Sources */,
 				B5E938801DA8AEAE00D0796C /* Tests */,
 				B5E938741DA8AEAE00D0796C /* Products */,
@@ -88,6 +92,7 @@
 				B5E938761DA8AEAE00D0796C /* SwiftPatterns.h */,
 				B5E938771DA8AEAE00D0796C /* Info.plist */,
 				B5E9388D1DA8AF9E00D0796C /* ChangeSet.swift */,
+				B537F0C51DA8C29900E18168 /* Alert.swift */,
 				B5E938931DA8B41900D0796C /* NonNilArrayFilter.swift */,
 				B5E938951DA8B46E00D0796C /* QueuedVar.swift */,
 				B5E938961DA8B46E00D0796C /* MediatedAccess.swift */,
@@ -227,6 +232,7 @@
 				B5E938941DA8B41900D0796C /* NonNilArrayFilter.swift in Sources */,
 				B5E938901DA8AF9E00D0796C /* URL+ExtendedAttributes.swift in Sources */,
 				B5E938921DA8B34700D0796C /* SerializedResourceWrapping.swift in Sources */,
+				B537F0C61DA8C29900E18168 /* Alert.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
