@@ -16,4 +16,13 @@ extension Data {
 			return a.pointee
 		})
 	}
+	
+	///apend bytes for the given POD type
+	public mutating func append<ContentType>(value:ContentType)throws {
+		var valueCopy:ContentType = value
+		let dataSize:Int = MemoryLayout<ContentType>.size
+		let rawPointer = UnsafeRawPointer(UnsafeMutablePointer(&valueCopy))
+		let tempData = Data(bytes:rawPointer, count: dataSize)
+		self.append(tempData)
+	}
 }
