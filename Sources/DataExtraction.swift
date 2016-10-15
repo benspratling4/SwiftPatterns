@@ -9,16 +9,17 @@
 import Foundation
 
 extension Data {
-	///I have no idea why extracting a simple POD type from Data is so hard.  here it is.
+	/// View some sub-range of bytes beginning at the given index as the return type.
+	/// `let value:UInt32 = data.extract(at:8)`	//converts bytes 8..<12 as an UInt32
 	public func extract<ContentType>(at index:Int)->ContentType {
 		let width:Int = MemoryLayout<ContentType>.size
-		return Data(self[index..<(index+width)]).withUnsafeBytes({ (a:UnsafePointer<ContentType>) -> ContentType in
-			return a.pointee
-		})
+		//TODO: can this be done without allocating a Data?
+		//does a sub-data use a reference?
+		return subdata(in: index..<(index+width)).withUnsafeBytes({ return $0.pointee })
 	}
 	
 	///apend bytes for the given POD type
-	public mutating func append<ContentType>(value:ContentType)throws {
+	public mutating func append<ContentType>(value:ContentType) {
 		var valueCopy:ContentType = value
 		let dataSize:Int = MemoryLayout<ContentType>.size
 		let rawPointer = UnsafeRawPointer(UnsafeMutablePointer(&valueCopy))
