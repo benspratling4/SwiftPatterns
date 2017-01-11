@@ -13,17 +13,19 @@ extension Data {
 	/// `let value:UInt32 = data.extract(at:8)`	//converts bytes 8..<12 as an UInt32
 	public func extract<ContentType>(at index:Int)->ContentType {
 		let width:Int = MemoryLayout<ContentType>.size
-		//TODO: can this be done without allocating a Data?
-		//does a sub-data use a reference?
-		return subdata(in: index..<(index+width)).withUnsafeBytes({ return $0.pointee })
+		let unsafeBytes = UnsafeMutablePointer<ContentType>.allocate(capacity: 1)
+		defer { unsafeBytes.deallocate(capacity: 1) }
+		let bufferPointer = UnsafeMutableBufferPointer(start: unsafeBytes, count: 1)
+		_ = self.copyBytes(to: bufferPointer, from: index..<(index + width))
+		return unsafeBytes.pointee
 	}
 	
 	///apend bytes for the given POD type
 	public mutating func append<ContentType>(value:ContentType) {
 		var valueCopy:ContentType = value
-		let dataSize:Int = MemoryLayout<ContentType>.size
-		let rawPointer = UnsafeRawPointer(UnsafeMutablePointer(&valueCopy))
-		let tempData = Data(bytes:rawPointer, count: dataSize)
-		self.append(tempData)
+		withUnsafePointer(to: &valueCopy) { (pointer:UnsafePointer<ContentType>) -> Void in
+			let buffer:UnsafeBufferPointer<ContentType> = UnsafeBufferPointer(start: pointer, count: 1)
+			self.append(buffer)
+		}
 	}
 }
