@@ -84,5 +84,10 @@ class LogSearchTests: XCTestCase {
 	}
 	*/
 	
+	static var allTests = [
+		("testExactMatches",testExactMatches),
+		("testMinMatches",testMinMatches),
+		("testMaxMatches",testMaxMatches),
+		]
     
 }

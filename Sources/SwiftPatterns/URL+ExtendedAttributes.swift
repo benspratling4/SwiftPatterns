@@ -8,6 +8,8 @@
 
 import Foundation
 
+#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+
 extension URL {
 	
 	public var extendedAttributes:ExtendedAttributes? {
@@ -98,3 +100,5 @@ open class ExtendedAttributes {
 	}
 	
 }
+
+#endif

@@ -50,6 +50,8 @@ public protocol DataWrapping : SerializedResourceWrapping {
 	var contents:Data { get set }
 }
 
+#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+
 fileprivate protocol ImplementedWithFileWrapper {
 	var wrapper:FileWrapper { get }
 }
@@ -247,3 +249,4 @@ extension DirectoryWrapping : ImplementedWithFileWrapper {
 	
 }
 
+#endif

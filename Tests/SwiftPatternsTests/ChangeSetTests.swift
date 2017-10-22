@@ -78,5 +78,16 @@ class ChangeSetTests: XCTestCase {
 		XCTAssertEqual(changeSet, ChangeSet(inserted:[0,2], removed:[1], moved:[0:3]))
 	}
 	
+	
+	static var allTests = [
+		("testEmptyHashableArrays",testEmptyHashableArrays),
+		("testEmptyClassArrays",testEmptyClassArrays),
+		("testIdenticalClassArrays",testIdenticalClassArrays),
+		("testInsert1ClassArrays",testInsert1ClassArrays),
+		("testInsert3ClassArrays",testInsert3ClassArrays),
+		("testInsertedAndRemovedClassArrays",testInsertedAndRemovedClassArrays),
+		("testInsertedAndRemovedClassArrays",testInsertedAndRemovedClassArrays),
+		("testInsertedAndRemovedAndMovedClassArrays",testInsertedAndRemovedAndMovedClassArrays),
+	]
 
 }

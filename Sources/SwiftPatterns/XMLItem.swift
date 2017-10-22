@@ -1,5 +1,5 @@
 //
-//  XMLElement.swift
+//  XMLItem.swift
 //  SingMusic
 //
 //  Created by Ben Spratling on 1/9/17.
@@ -11,8 +11,10 @@ import Foundation
 public protocol XMLChild {
 }
 
+@available(*, unavailable, renamed: "XMLItem")
+public typealias XMLElement = XMLItem
 
-public class XMLElement {
+public class XMLItem {
 	
 	public var name:String?
 	
@@ -41,9 +43,9 @@ public class XMLElement {
 		return Int(childString)
 	}
 	
-	public func child(named childName:String)->XMLElement? {
+	public func child(named childName:String)->XMLItem? {
 		for aChild in children {
-			guard let childNode = aChild as? XMLElement else { continue }
+			guard let childNode = aChild as? XMLItem else { continue }
 			if childNode.name == childName {
 				return childNode
 			}
@@ -52,12 +54,12 @@ public class XMLElement {
 	}
 	
 	
-	public func children(named childName:String, range:CountableRange<Int>? = nil)->([XMLElement], Set<Int>) {
+	public func children(named childName:String, range:CountableRange<Int>? = nil)->([XMLItem], Set<Int>) {
 		let searchRange:CountableRange<Int> = range ?? 0..<children.count
 		var indexes = Set<Int>()
-		var foundChildren:[XMLElement] = []
+		var foundChildren:[XMLItem] = []
 		for (index, child) in children[searchRange].enumerated() {
-			guard let nodeChild = child as? XMLElement else { continue }
+			guard let nodeChild = child as? XMLItem else { continue }
 			if nodeChild.name != childName { continue }
 			indexes.insert(index)
 			foundChildren.append(nodeChild)
@@ -67,7 +69,7 @@ public class XMLElement {
 	
 	public func removeStringOnlyChildren() {
 		children = children.filter({ (child) -> Bool in
-			return child is XMLElement
+			return child is XMLItem
 		})
 	}
 	
@@ -77,23 +79,23 @@ public class XMLElement {
 extension String : XMLChild {
 }
 
-extension XMLElement : XMLChild {
+extension XMLItem : XMLChild {
 }
 
 
-public class DataToXMLElementFactory : NSObject, XMLParserDelegate {
+public class DataToXMLItemFactory : NSObject, XMLParserDelegate {
 	let xmlParser:XMLParser
-	var nodeStack:[XMLElement]
-	var completion:((_ node:XMLElement?, _ error:NSError?)->())?
+	var nodeStack:[XMLItem]
+	var completion:((_ node:XMLItem?, _ error:Error?)->())?
 	public init(data:Data) {
-		nodeStack = [XMLElement()]
+		nodeStack = [XMLItem()]
 		nodeStack.first?.name = "Document"
 		xmlParser = XMLParser(data: data)
 		super.init()
 		xmlParser.delegate = self
 	}
 	
-	public func parseNode(_ completion:@escaping (_ node:XMLElement?, _ error:NSError?)->()) {
+	public func parseNode(_ completion:@escaping (_ node:XMLItem?, _ error:Error?)->()) {
 		self.completion = completion
 		xmlParser.parse()
 	}
@@ -104,7 +106,7 @@ public class DataToXMLElementFactory : NSObject, XMLParserDelegate {
 	}
 	
 	public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String]) {
-		let newNode:XMLElement = XMLElement()
+		let newNode:XMLItem = XMLItem()
 		newNode.name = elementName
 		newNode.attributes = attributeDict
 		nodeStack.last?.children.append(newNode)
@@ -116,7 +118,7 @@ public class DataToXMLElementFactory : NSObject, XMLParserDelegate {
 	}
 	
 	public func parser(_ parser: XMLParser, foundCharacters string: String) {
-		let topNode:XMLElement = nodeStack.last!
+		let topNode:XMLItem = nodeStack.last!
 		if let lastChild = topNode.children.last as? String {
 			let newString = lastChild + string
 			topNode.children[topNode.children.count - 1] = newString
@@ -126,14 +128,19 @@ public class DataToXMLElementFactory : NSObject, XMLParserDelegate {
 	}
 	
 	public func parser(_ parser: XMLParser, parseErrorOccurred parseError: Error) {
-		completion?(nil, parseError as NSError?)
+		completion?(nil, parseError)
 		completion = nil
 	}
 	
-	///Accessing this the first time causes a parse operation
-	public lazy var documentElement:XMLElement? = self.parseNodes()
+	@available(*, unavailable, renamed: "documentItem")
+	public var documentElement:XMLItem? {
+		return documentItem
+	}
 	
-	func parseNodes()->XMLElement? {
+	///Accessing this the first time causes a parse operation
+	public lazy var documentItem:XMLItem? = self.parseNodes()
+	
+	func parseNodes()->XMLItem? {
 		xmlParser.parse()
 		return nodeStack.first
 	}
@@ -141,9 +148,12 @@ public class DataToXMLElementFactory : NSObject, XMLParserDelegate {
 }
 
 
-public protocol ExpressibleAsXMLElement {
-	init(xmlElement:XMLElement)throws
+public protocol ExpressibleAsXMLItem {
+	init(XMLItem:XMLItem)throws
 }
+
+@available(*, unavailable, renamed: "ExpressibleAsXMLItem")
+public typealias ExpressibleAsXMLElement = ExpressibleAsXMLItem
 
 
 public enum XMLParsingError : Error {
