@@ -50,6 +50,7 @@ public protocol DataWrapping : SerializedResourceWrapping {
 	var contents:Data { get set }
 }
 
+
 #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
 
 fileprivate protocol ImplementedWithFileWrapper {
@@ -248,5 +249,257 @@ extension FileWrapping : ImplementedWithFileWrapper {
 extension DirectoryWrapping : ImplementedWithFileWrapper {
 	
 }
+	
+#else
+
+	
+public class FileWrapping : DataWrapping, SynchronizedURLResourceWrapping {
+	
+	weak public var parentResourceWrapper:SubResourceWrapping?
+	
+	public var lastPathComponent: String {
+		didSet {
+			parentResourceWrapper?.child(named: oldValue, changedNameTo: lastPathComponent)
+		}
+	}
+	
+	public var contents: Data
+	
+	public var serializedRepresentation: Data {
+		get {
+			return contents
+		}
+		set {
+			contents = newValue
+		}
+	}
+	
+	public init(data:Data, name:String) {
+		self.contents = data
+		self.lastPathComponent = name
+	}
+	
+	
+	public init(contentsOf url:URL)throws {
+		try contents = Data(contentsOf:url)
+		lastPathComponent = url.lastPathComponent
+	}
+	
+	public func read(from url:URL) throws {
+		contents = try Data(contentsOf: url)
+		lastPathComponent = url.lastPathComponent
+	}
+	
+	//overwriting is implied
+	public func write(to url:URL) throws {
+		try contents.write(to: url, options:[.atomic])
+	}
+	
+}
+
+///you can provide a url without it actually reading
+public class LazyFileWrapping : DataWrapping, SynchronizedURLResourceWrapping {
+	
+	weak public var parentResourceWrapper:SubResourceWrapping?
+	
+	private var url:URL
+	
+	private var representation:FileWrapping?
+	
+	public var isLoaded:Bool {
+		return representation != nil
+	}
+	
+	private func loadIfNeeded() {
+		if representation != nil {
+			return
+		}
+		representation = try? FileWrapping(contentsOf:url)
+	}
+	
+	public var lastPathComponent: String {
+		get {
+			return url.lastPathComponent
+		}
+		set {
+			changedSinceRead = false
+			let oldComponent = url.lastPathComponent
+			url = url.deletingLastPathComponent().appendingPathComponent(newValue)
+			parentResourceWrapper?.child(named: oldComponent, changedNameTo: newValue)
+		}
+	}
+	
+	private var changedSinceRead:Bool = false
+	
+	public var contents: Data {
+		get {
+			if !isLoaded {
+				loadIfNeeded()
+			}
+			return representation?.contents ?? Data()
+		}
+		set {
+			changedSinceRead = false
+			representation = FileWrapping(data:contents, name:url.lastPathComponent)
+		}
+	}
+	
+	public var serializedRepresentation: Data {
+		get {
+			return contents
+		}
+		set {
+			contents = newValue
+		}
+	}
+	
+	public init(data:Data, name:String) {
+		url = URL(fileURLWithPath: name)
+		representation = FileWrapping(data:data, name:name)
+	}
+	
+	
+	public init(contentsOf url:URL)throws {
+		self.url = url
+		representation = try FileWrapping(contentsOf:url)
+	}
+	
+	public func read(from url:URL) throws {
+		contents = try Data(contentsOf: url)
+		lastPathComponent = url.lastPathComponent
+	}
+	
+	//overwriting is implied
+	public func write(to url:URL) throws {
+		if !changedSinceRead { return }	//skip if we never changed anything
+		try contents.write(to: url, options:[.atomic])
+	}
+	
+}
+
+
+
+public class DirectoryWrapping : SubResourceWrapping, SynchronizedURLResourceWrapping {
+	
+	weak public var parentResourceWrapper:SubResourceWrapping?
+	
+	private var subWrappers:[String:SerializedResourceWrapping] = [:]
+	
+	public var lastPathComponent: String {
+		didSet {
+			parentResourceWrapper?.child(named: oldValue, changedNameTo: lastPathComponent)
+		}
+	}
+	
+	public init(lastPathComponent: String, subWrappers:[String:SerializedResourceWrapping]) {
+		self.lastPathComponent = lastPathComponent
+		self.subWrappers = subWrappers
+	}
+	
+	public convenience init(wrappers:[String:SerializedResourceWrapping]) {
+		self.init(lastPathComponent:"", subWrappers:wrappers)
+	}
+	
+	public init(url:URL, fileManager:FileManager = FileManager()) {
+		lastPathComponent = url.lastPathComponent
+		let _ = try? recursiveRead(in: url, fileManager: fileManager)
+	}
+	
+	public var serializedRepresentation:Data {
+		get {
+			fatalError("no implementation of directory wrapping .serializedRepresentation")
+		}
+	}
+	
+	public var subResources:[String:SerializedResourceWrapping] {
+		get {
+			return subWrappers
+		}
+		/*	set {
+		//filter out any non file or directory wrappers?
+		
+		}	*/
+	}
+	
+	public subscript(key:String)->SerializedResourceWrapping? {
+		get {
+			return subWrappers[key]
+		}
+		set {
+			removeWrapper(for: key)
+			//verify that the object is either a directory or a file wrapper
+			guard var newWrapper = newValue else {
+				return
+			}
+			newWrapper.parentResourceWrapper = self
+			subWrappers[key] = newWrapper
+		}
+	}
+	
+	private func removeWrapper(for key:String) {
+		defer {
+			subWrappers[key] = nil
+		}
+		guard var existingValue:SerializedResourceWrapping = subWrappers[key]
+			else { return }
+		existingValue.parentResourceWrapper = nil
+	}
+	
+	public func child(named:String, changedNameTo newName:String) {
+		if named == newName { return }
+		subWrappers[newName] = subWrappers[named]
+		subWrappers[named] = nil
+	}
+	
+	private func recursiveRead(in url:URL, fileManager:FileManager)throws {
+		let files:[URL] = try fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: nil, options: [.skipsSubdirectoryDescendants])
+		subWrappers = [:]
+		for file in files {
+			var isDir: ObjCBool = false
+			let _ = fileManager.fileExists(atPath: file.path, isDirectory: &isDir)
+			if isDir {
+				let dirWrapper = DirectoryWrapping(url: file, fileManager: fileManager)
+				subWrappers[file.lastPathComponent] = dirWrapper
+				dirWrapper.parentResourceWrapper = self
+			} else {
+				if let fileWrapper = try? LazyFileWrapping(contentsOf: file) {
+					subWrappers[file.lastPathComponent] = fileWrapper
+					fileWrapper.parentResourceWrapper = self
+				}
+			}
+		}
+	}
+	
+	
+	public func read(from url:URL) throws {
+		let manager = FileManager()
+		try recursiveRead(in: url, fileManager: manager)
+	}
+	
+	//overwriting is implied
+	public func write(to url:URL) throws {
+		try recursiveWrite(to: url, fileManager: FileManager())
+	}
+	
+	
+	fileprivate func recursiveWrite(to url:URL, fileManager:FileManager)throws {
+		var isDir:ObjCBool = false
+		if fileManager.fileExists(atPath: url.path, isDirectory: &isDir) || !isDir {
+			try fileManager.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
+		}
+		
+		for (pathComponent, child) in subWrappers {
+			let newUrl:URL = url.appendingPathComponent(pathComponent)
+			if let dirChild = child as? DirectoryWrapping {
+				try dirChild.recursiveWrite(to: newUrl, fileManager: fileManager)
+			} else if let syncableChild = child as? SynchronizedURLResourceWrapping {
+				try syncableChild.write(to: newUrl)
+			}
+		}
+	}
+	
+}
+	
 
 #endif
+
