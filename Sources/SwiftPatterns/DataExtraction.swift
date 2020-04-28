@@ -14,7 +14,7 @@ extension Data {
 	public func extract<ContentType>(at index:Int)->ContentType {
 		let width:Int = MemoryLayout<ContentType>.size
 		let unsafeBytes = UnsafeMutablePointer<ContentType>.allocate(capacity: 1)
-		defer { unsafeBytes.deallocate(capacity: 1) }
+		defer { unsafeBytes.deallocate() }
 		let bufferPointer = UnsafeMutableBufferPointer(start: unsafeBytes, count: 1)
 		_ = self.copyBytes(to: bufferPointer, from: index..<(index + width))
 		return unsafeBytes.pointee

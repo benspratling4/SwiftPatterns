@@ -47,7 +47,7 @@ fileURL?.extendedAttributes?["MyMetaDataKey"] = data
 */
 
 open class ExtendedAttributes {
-	open let url:URL
+	public let url:URL
 	public init?(url:URL) {
 		self.url = url
 		if url.scheme != "file"  {
@@ -63,7 +63,7 @@ open class ExtendedAttributes {
 				if bufferLength == -1 {
 					return nil
 				}
-				let buffer:UnsafeMutableRawPointer = UnsafeMutableRawPointer.allocate(bytes: bufferLength, alignedTo:8)	//any idea of what "aligned to" means?
+				let buffer:UnsafeMutableRawPointer = UnsafeMutableRawPointer.allocate(byteCount: bufferLength, alignment:8)	//any idea of what "aligned to" means?
 				if getxattr(systemPath, key, buffer, bufferLength, 0, 0) == -1 {
 					free(buffer)
 					return nil
@@ -75,7 +75,7 @@ open class ExtendedAttributes {
 			if let newData:Data = newValue {
 				newData.withUnsafeBytes({ (buffer) -> Void in
 					url.withUnsafeFileSystemRepresentation({ (systemPath) in
-						setxattr(systemPath, key, buffer, newData.count, 0, 0)	//fail is ==-1
+						_ = setxattr(systemPath, key, buffer, newData.count, 0, 0)	//fail is ==-1
 					})
 				})
 			} else {

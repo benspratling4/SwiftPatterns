@@ -12,7 +12,8 @@ import Foundation
 /// an example could a file, or maybe a directory, or a zip file which contains more serialized items
 public protocol SerializedResourceWrapping {
 	
-	weak var parentResourceWrapper:SubResourceWrapping? { get set }
+	///implement as weak
+	var parentResourceWrapper:SubResourceWrapping? { get set }
 	
 	var serializedRepresentation:Data { get }
 	

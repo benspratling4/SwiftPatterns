@@ -1,4 +1,4 @@
-// swift-tools-version:4.0
+// swift-tools-version:5.0
 import PackageDescription
 let package = Package(
 	name: "SwiftPatterns",
@@ -10,5 +10,5 @@ let package = Package(
 		.target(name: "SwiftPatterns", dependencies: []),
 		.testTarget(name: "SwiftPatternsTests", dependencies: ["SwiftPatterns"]),
 		],
-	swiftLanguageVersions:[3,4]
+	swiftLanguageVersions:[.v5]
 )

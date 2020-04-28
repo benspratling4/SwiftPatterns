@@ -10,7 +10,7 @@
 open class Alert {
 	open var title:String
 	open var description:String
-	open let actions:[Action]
+	public let actions:[Action]
 	public init(title:String, description:String, actions:[Action]) {
 		self.title = title
 		self.description = description
@@ -29,9 +29,9 @@ open class Alert {
 			case cancel, destructive, normal
 		}
 		
-		open let title:String
-		open let action:()->()
-		open let kind:Kind
+		public let title:String
+		public let action:()->()
+		public let kind:Kind
 		
 		public init(title:String, kind:Kind, action:@escaping ()->()) {
 			self.title = title
