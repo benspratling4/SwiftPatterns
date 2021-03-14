@@ -20,11 +20,27 @@ extension UInt8 {
 		return masked != 0
 	}
 	
+	/// pull a Bool representing a bit in a byte.
+	/// true == 1, false == 0
+	/// `at`: 7 == least significant bit, MSb = 0
+	public func MSBBit(at:UInt8)->Bool {
+		let masked:UInt8 = self & UInt8.masks[Int(7-at)]
+		return masked != 0
+	}
+	
 	public mutating func setBit(_ bit:Bool, at:UInt8) {
 		if bit {
 			self = self | UInt8.masks[Int(at)]
 		} else {
 			self = self & UInt8.inverseMasks[Int(at)]
+		}
+	}
+	
+	public mutating func setMSBBit(_ bit:Bool, at:UInt8) {
+		if bit {
+			self = self | UInt8.masks[Int(7-at)]
+		} else {
+			self = self & UInt8.inverseMasks[Int(7-at)]
 		}
 	}
 	
