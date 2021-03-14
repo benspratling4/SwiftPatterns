@@ -29,3 +29,48 @@ extension Data {
 		}
 	}
 }
+
+
+///The factories should use the BitStream instead
+extension Data {
+	///these bits are LSB first, not MSB first like human writing
+	public func bits(at:BitCursor, count:Int = 1)->([Bool], BitCursor) {
+		var cursor:BitCursor = at
+		var bits:[Bool] = []
+		for _ in 0..<count {
+			//get the byte at the cursor
+			bits.append(self[cursor.byte].bit(at:cursor.bit))
+			cursor = cursor.adding(bits: 1)
+		}
+		return (bits, cursor)
+	}
+	
+	///does not use bits in reading the bytes, so bytes are always byte-aligned to the oriignal data
+	public func bytes(at:BitCursor, count:Int = 1)->([UInt8], BitCursor) {
+		let newBitCursor = at.adding(bytes: count)
+		var bytes:[UInt8] = Array<UInt8>(repeating: 0, count: count)
+		copyBytes(to: &bytes, from: at.byte..<newBitCursor.byte)
+		return (bytes, newBitCursor)
+	}
+	
+	mutating func appendBits(_ bits:[Bool], at cursor:BitCursor)->BitCursor {
+		var newCursor:BitCursor = cursor
+		for bitIndex in 0..<bits.count {
+			var aByte:UInt8
+			if newCursor.byte >= count {
+				//we need to add a new byte
+				aByte = 0
+			} else {
+				aByte = self[newCursor.byte]
+			}
+			aByte.setBit(bits[bitIndex], at: newCursor.bit)
+			if newCursor.byte >= count {
+				append(aByte)
+			} else {
+				self[newCursor.byte] = aByte
+			}
+			newCursor = newCursor.adding(bits: 1)
+		}
+		return newCursor
+	}
+}
