@@ -1,9 +1,9 @@
-// swift-tools-version:5.0
+// swift-tools-version:5.3
 import PackageDescription
 let package = Package(
 	name: "SwiftPatterns",
 	products: [
-		.library(name: "SwiftPatterns", targets: ["SwiftPatterns"]),
+		.library(name: "SwiftPatterns", type:.dynamic, targets: ["SwiftPatterns"]),
 	],
 	dependencies:[],
 	targets: [

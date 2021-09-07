@@ -11,8 +11,6 @@ import Foundation
 public protocol XMLChild {
 }
 
-@available(*, unavailable, renamed: "XMLItem")
-public typealias XMLElement = XMLItem
 
 public class XMLItem {
 	

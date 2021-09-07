@@ -17,6 +17,18 @@ public struct ChangeSet {
 extension ChangeSet : Equatable {
 }
 
+
+extension Set {
+	public static func make(_ range:CountableRange<Int>)->Set<Int> {
+		var values:[Int] = []
+		for i in range {
+			values.append(i)
+		}
+		return Set<Int>(values)
+	}
+}
+
+
 public func == (lhs:ChangeSet, rhs:ChangeSet)->Bool {
 	if lhs.inserted != rhs.inserted { return false }
 	if lhs.removed != rhs.removed { return false }
@@ -137,10 +149,8 @@ extension Array where Element : AnyObject {
 	
 }
 
-
-
-#if os(iOS) || os(tvOS)
-	import UIKit
+#if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
+import UIKit
 	
 	
 	extension IndexPath {
@@ -155,7 +165,7 @@ extension Array where Element : AnyObject {
 	
 	
 	extension UITableView {
-		func apply(changeSet:ChangeSet, section:Int = 0) {
+		public func apply(changeSet:ChangeSet, section:Int = 0) {
 			beginUpdates()
 			if !changeSet.removed.isEmpty {
 				let deletedPaths:[IndexPath] = IndexPath.paths(withRows:changeSet.removed, section:section)
@@ -183,11 +193,100 @@ extension Array where Element : AnyObject {
 	
 	//TODO: collection view
 	
+	extension UICollectionView {
+		public func apply(changeSet:ChangeSet, section:Int = 0) {
+			//TODO: use completion block?
+			performBatchUpdates({
+				if !changeSet.removed.isEmpty {
+					let deletedPaths:[IndexPath] = IndexPath.paths(withRows: changeSet.removed, section: section)
+					self.deleteItems(at: deletedPaths)
+				}
+				if !changeSet.inserted.isEmpty {
+					let insertedPaths:[IndexPath] = IndexPath.paths(withRows: changeSet.inserted, section: section)
+					self.insertItems(at: insertedPaths)
+				}
+				if !changeSet.refreshed.isEmpty {
+					let refreshedPaths:[IndexPath] = IndexPath.paths(withRows: changeSet.refreshed, section: section)
+					self.reloadItems(at: refreshedPaths)
+				}
+				if !changeSet.moved .isEmpty {
+					for (old, new) in changeSet.moved {
+						let oldPath:IndexPath = IndexPath(item: old, section: section)
+						let newPath:IndexPath = IndexPath(item: new, section: section)
+						self.moveItem(at: oldPath, to: newPath)
+					}
+				}
+				}, completion: nil)
+		}
+	}
 	
-#elseif os(OSX)
+	
+#elseif os(macOS)
 	import Cocoa
 	
 	//TODO: write me
+
+
+extension NSTableView {
+	public func apply(changeSet:ChangeSet) {
+		beginUpdates()
+		if !changeSet.removed.isEmpty {
+			removeRows(at: IndexSet(Array<Int>(changeSet.removed)), withAnimation: [.slideUp])
+		}
+		if !changeSet.inserted.isEmpty {
+			insertRows(at: IndexSet(Array<Int>(changeSet.inserted)), withAnimation: [.slideDown])
+		}
+		if !changeSet.refreshed.isEmpty {
+			reloadData(forRowIndexes: IndexSet(Array<Int>(changeSet.refreshed)), columnIndexes: IndexSet(integersIn: 0..<self.numberOfColumns))
+		}
+		if !changeSet.moved.isEmpty {
+			for (old, new) in changeSet.moved {
+				moveRow(at: old, to: new)
+			}
+		}
+		endUpdates()
+	}
+}
+
+extension IndexPath {
+	static func paths(withRows:Set<Int>, section:Int)->[IndexPath] {
+		var paths:[IndexPath] = []
+		for row in withRows {
+			paths.append(IndexPath(item: row, section: section))
+		}
+		return paths
+	}
+}
+
+extension NSCollectionView {
+	
+	@available(macOS 10.11, *)
+	public func apply(changeSet:ChangeSet, section:Int = 0) {
+		performBatchUpdates({
+			if !changeSet.removed.isEmpty {
+				let deletedPaths:Set<IndexPath> = Set<IndexPath>(IndexPath.paths(withRows: changeSet.removed, section: section))
+				self.deleteItems(at: deletedPaths)
+			}
+			if !changeSet.inserted.isEmpty {
+				let insertedPaths:Set<IndexPath> = Set<IndexPath>(IndexPath.paths(withRows: changeSet.inserted, section: section))
+				self.insertItems(at: insertedPaths)
+			}
+			if !changeSet.refreshed.isEmpty {
+				let refreshedPaths:Set<IndexPath> = Set<IndexPath>(IndexPath.paths(withRows: changeSet.refreshed, section: section))
+				self.reloadItems(at: refreshedPaths)
+			}
+			if !changeSet.moved .isEmpty {
+				for (old, new) in changeSet.moved {
+					let oldPath:IndexPath = IndexPath(item: old, section: section)
+					let newPath:IndexPath = IndexPath(item: new, section: section)
+					self.moveItem(at: oldPath, to: newPath)
+				}
+			}
+		}, completionHandler: nil)
+	}
+	
+}
+
 	
 #endif
 
