@@ -126,4 +126,64 @@ class JSONPrimitiveTests: XCTestCase {
 		}
 	}
 	
+	
+	func testIntegerEncode() throws {
+		let testCases:[(String, JSONPrimitive)] = [
+			("-13", .integer(-13)),
+			("6783482039", .integer(6783482039)),
+		]
+		
+		for (stringValue, jsonValue) in testCases {
+			let data:Data = stringValue.data(using: .utf8)!
+			let encodedData = try JSONEncoder().encode(jsonValue)
+			XCTAssertEqual(data, encodedData)
+		}
+	}
+	
+	
+	func testArrayEncode() throws {
+		let testCases:[(String, JSONPrimitive)] = [
+			("[-13,68,39,6789]", .array([.integer(-13), .integer(68), .integer(39), .integer(6789)])),
+		]
+		
+		for (stringValue, jsonValue) in testCases {
+			let data:Data = stringValue.data(using: .utf8)!
+			let encodedData = try JSONEncoder().encode(jsonValue)
+			XCTAssertEqual(data, encodedData)
+		}
+	}
+	
+	
+	func testObjectEncode() throws {
+		let testCases:[(String, JSONPrimitive)] = [
+			("{\"a\":-13}", .object(["a":.integer(-13)])),
+		]
+		
+		for (stringValue, jsonValue) in testCases {
+			let data:Data = stringValue.data(using: .utf8)!
+			let encodedData = try JSONEncoder().encode(jsonValue)
+			XCTAssertEqual(data, encodedData)
+		}
+	}
+	
+	func testBooleanLiteralInit() {
+		let primitive:JSONPrimitive = true
+		XCTAssertEqual(JSONPrimitive.boolean(true), primitive)
+	}
+	
+	func testIntegerLiteralInit() {
+		let primitive:JSONPrimitive = 16793
+		XCTAssertEqual(JSONPrimitive.integer(16793), primitive)
+	}
+	
+	func testStringLiteralInit() {
+		let primitive:JSONPrimitive = "123abcu&me"
+		XCTAssertEqual(JSONPrimitive.string("123abcu&me"), primitive)
+	}
+	
+	func testArrayLiteralInit() {
+		let primitive:JSONPrimitive = ["123abcu&me", true, 23489, 34587.245]
+		XCTAssertEqual(JSONPrimitive.array([.string("123abcu&me"), .boolean(true), .integer(23489), .float(34587.245)]), primitive)
+	}
+	
 }
