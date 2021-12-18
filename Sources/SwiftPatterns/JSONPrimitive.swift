@@ -21,23 +21,6 @@ public enum JSONPrimitive : Hashable {
 }
 
 
-fileprivate struct JSONPrimitiveCodingKey : CodingKey {
-	
-	init?(stringValue: String) {
-		self.stringValue = stringValue
-		intValue = nil
-	}
-	
-	var stringValue: String
-	var intValue: Int?
-	
-	init?(intValue: Int) {
-		self.intValue = intValue
-		stringValue = "\(intValue)"
-	}
-}
-
-
 public enum JSONPrimitiveDecodingError : Error {
 	case unknownFormat
 }
@@ -53,7 +36,7 @@ extension JSONPrimitive : Decodable {
 			}
 			self = .array(primitives)
 		}
-		else if let objectContainer:KeyedDecodingContainer<JSONPrimitiveCodingKey> = try? decoder.container(keyedBy: JSONPrimitiveCodingKey.self) {
+		else if let objectContainer:KeyedDecodingContainer<DynamicCodingKeys> = try? decoder.container(keyedBy: DynamicCodingKeys.self) {
 			var values:[String:JSONPrimitive] = [:]
 			for key in objectContainer.allKeys {
 				if let value = try? objectContainer.decode(JSONPrimitive.self, forKey: key) {
