@@ -59,8 +59,11 @@ extension JSONPrimitive : Decodable {
 			else if let string:String = try? container.decode(String.self) {
 				self = .string(string)
 			}
-			else {
+			else if container.decodeNil() {
 				self = .null
+			}
+			else {
+				throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unable to match the value type")
 			}
 		}
 	}
@@ -146,3 +149,69 @@ extension JSONPrimitive : ExpressibleByDictionaryLiteral {
 		self = .object(dict)
 	}
 }
+
+
+///If you have a single type, but variable keys, you can use this for coding, without involving `JSONPrimitive`.
+public struct JSONDict<ValueType> {
+	
+	public var keysAndValues:[String:ValueType] = [:]
+	
+	public init(keysAndValues:[String:ValueType] = [:]) {
+		self.keysAndValues = keysAndValues
+	}
+	
+	public subscript(key:String)->ValueType? {
+		get {
+			return keysAndValues[key]
+		}
+		set {
+			keysAndValues[key] = newValue
+		}
+	}
+	
+}
+
+extension JSONDict : Equatable where ValueType : Equatable {
+	public static func == (lhs: Self, rhs: Self) -> Bool {
+		return lhs.keysAndValues == rhs.keysAndValues
+	}
+}
+
+extension JSONDict : Hashable where ValueType : Hashable {
+	public func hash(into hasher: inout Hasher) {
+		keysAndValues.hash(into: &hasher)
+	}
+}
+
+extension JSONDict : ExpressibleByDictionaryLiteral {
+	public init(dictionaryLiteral elements: (String, ValueType)...) {
+		self.init(keysAndValues: [String:ValueType](uniqueKeysWithValues: elements))
+	}
+}
+
+extension JSONDict : Decodable where ValueType : Decodable {
+	
+	public init(from decoder: Decoder) throws {
+		self.init()
+		let keyedContainer = try decoder.container(keyedBy: DynamicCodingKeys.self)
+		
+		for key in keyedContainer.allKeys {
+			if let value = try? keyedContainer.decode(ValueType.self, forKey: key) {
+				keysAndValues[key.stringValue] = value
+			}
+		}
+	}
+	
+}
+
+extension JSONDict : Encodable where ValueType : Encodable {
+	public func encode(to encoder: Encoder) throws {
+		var container = encoder.container(keyedBy: DynamicCodingKeys.self)
+		for (key, value) in keysAndValues {
+			guard let codingKey = DynamicCodingKeys(stringValue: key) else { continue }
+			try container.encode(value, forKey:codingKey)
+		}
+	}
+	
+}
+

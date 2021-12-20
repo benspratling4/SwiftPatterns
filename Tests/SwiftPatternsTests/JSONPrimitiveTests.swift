@@ -186,4 +186,25 @@ class JSONPrimitiveTests: XCTestCase {
 		XCTAssertEqual(JSONPrimitive.array([.string("123abcu&me"), .boolean(true), .integer(23489), .float(34587.245)]), primitive)
 	}
 	
+	func testEncodeJsonDict() {
+		let sampleValues:JSONDict<Bool> = ["a":true, "b":false]
+		guard let data:Data = try? JSONEncoder().encode(sampleValues)
+			,let dataString = String(data: data, encoding: .utf8)
+			else {
+			XCTFail("")
+			return
+		}
+		XCTAssertEqual(dataString, "{\"a\":true,\"b\":false}")
+	}
+	
+	func testDecodeJsonDict() {
+		let data = "{\"a\":true,\"b\":false}".data(using: .utf8)!
+		guard let value = try? JSONDecoder().decode(JSONDict<Bool>.self, from: data) else {
+			XCTFail("decoder failed")
+			return
+		}
+		let sampleValues:JSONDict<Bool> = ["a":true, "b":false]
+		XCTAssertEqual(value, sampleValues)
+	}
+	
 }
