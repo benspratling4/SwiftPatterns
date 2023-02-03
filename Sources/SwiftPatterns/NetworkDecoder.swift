@@ -40,10 +40,19 @@ public struct NetworkDecoder {
 		return NetworkDecoding(body: body, headers: headersValue)
 	}
 	
-	//options
-	public var dateDecodingStrategy:JSONDecoder.DateDecodingStrategy = .deferredToDate
-	
 	public var headerFieldDecoders:[String:HTTPHeaderFieldDecoder] = [:]
+	
+	public var bodyDecoder:JSONDecoder = JSONDecoder()
+	
+	///options, prefer setting properties of bodyDecoder instead
+	public var dateDecodingStrategy:JSONDecoder.DateDecodingStrategy {
+		get {
+			bodyDecoder.dateDecodingStrategy
+		}
+		set {
+			bodyDecoder.dateDecodingStrategy = newValue
+		}
+	}
 	
 }
 
@@ -65,9 +74,9 @@ public class HTTPResponseDecoder : TopLevelDecoder {
 	
 	public func decode<T>(_ typeToDecode:T.Type, from urlResponse: URLResponse) throws -> T where T : Decodable {
 		guard let httpResponse = urlResponse as? HTTPURLResponse else {
-			throw HTTPResponseDecoderError.notHTTPResponse
+			throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "the response is not an HTTPURLResponse"))
 		}
-		let decoder = HTTPResponseContainerDecoder(httpResponse: httpResponse)
+		let decoder = HTTPResponseContainerDecoder(httpResponse: httpResponse, fieldDecoders: fieldDecoders)
 		
 		return try typeToDecode.init(from: decoder)
 	}
@@ -81,15 +90,6 @@ public protocol HTTPHeaderFieldDecoder {
 	//MARK: - TopLevelDecoder
 	
 	func decode<T>(_ typeToDecode:T.Type, from string: String) throws -> T
-}
-
-
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0,  *)
-public enum HTTPResponseDecoderError : Error {
-	case notHTTPResponse
-	case headerFieldNotPresent
-	case incompatibleType
-	case noRegisteredFieldDecoder
 }
 
 
@@ -134,142 +134,145 @@ struct HTTPHeadersKeyedDecodingContainer<Key> : KeyedDecodingContainerProtocol w
 	}
 	
 	func decode(_ type: Bool.Type, forKey key: Key) throws -> Bool {
-		throw HTTPResponseDecoderError.incompatibleType
+		guard let stringValue = response.value(forHTTPHeaderField: key.stringValue) else {
+			throw DecodingError.keyNotFound(key, .init(codingPath: [key], debugDescription: "no http header for \(key)"))
+		}
+		return (stringValue as NSString).boolValue
 	}
 	
 	func decode(_ type: String.Type, forKey key: Key) throws -> String {
 		guard let value = response.value(forHTTPHeaderField: key.stringValue) else {
-			throw HTTPResponseDecoderError.headerFieldNotPresent
+			throw DecodingError.keyNotFound(key, .init(codingPath: [key], debugDescription: "no http header for \(key)"))
 		}
 		return value
 	}
 	
 	func decode(_ type: Double.Type, forKey key: Key) throws -> Double {
 		guard let stringValue = response.value(forHTTPHeaderField: key.stringValue) else {
-			throw HTTPResponseDecoderError.headerFieldNotPresent
+			throw DecodingError.keyNotFound(key, .init(codingPath: [key], debugDescription: "no http header for \(key)"))
 		}
 		guard let value = Double(stringValue) else {
-			throw HTTPResponseDecoderError.incompatibleType
+			throw DecodingError.typeMismatch(type, .init(codingPath: [key], debugDescription: "unable to convert \(stringValue) to \(type)"))
 		}
 		return value
 	}
 	
 	func decode(_ type: Float.Type, forKey key: Key) throws -> Float {
 		guard let stringValue = response.value(forHTTPHeaderField: key.stringValue) else {
-			throw HTTPResponseDecoderError.headerFieldNotPresent
+			throw DecodingError.keyNotFound(key, .init(codingPath: [key], debugDescription: "no http header for \(key)"))
 		}
 		guard let value = Float(stringValue) else {
-			throw HTTPResponseDecoderError.incompatibleType
+			throw DecodingError.typeMismatch(type, .init(codingPath: [key], debugDescription: "unable to convert \(stringValue) to \(type)"))
 		}
 		return value
 	}
 	
 	func decode(_ type: Int.Type, forKey key: Key) throws -> Int {
 		guard let stringValue = response.value(forHTTPHeaderField: key.stringValue) else {
-			throw HTTPResponseDecoderError.headerFieldNotPresent
+			throw DecodingError.keyNotFound(key, .init(codingPath: [key], debugDescription: "no http header for \(key)"))
 		}
 		guard let value = Int(stringValue) else {
-			throw HTTPResponseDecoderError.incompatibleType
+			throw DecodingError.typeMismatch(type, .init(codingPath: [key], debugDescription: "unable to convert \(stringValue) to \(type)"))
 		}
 		return value
 	}
 	
 	func decode(_ type: Int8.Type, forKey key: Key) throws -> Int8 {
 		guard let stringValue = response.value(forHTTPHeaderField: key.stringValue) else {
-			throw HTTPResponseDecoderError.headerFieldNotPresent
+			throw DecodingError.keyNotFound(key, .init(codingPath: [key], debugDescription: "no http header for \(key)"))
 		}
 		guard let value = Int8(stringValue) else {
-			throw HTTPResponseDecoderError.incompatibleType
+			throw DecodingError.typeMismatch(type, .init(codingPath: [key], debugDescription: "unable to convert \(stringValue) to \(type)"))
 		}
 		return value
 	}
 	
 	func decode(_ type: Int16.Type, forKey key: Key) throws -> Int16 {
 		guard let stringValue = response.value(forHTTPHeaderField: key.stringValue) else {
-			throw HTTPResponseDecoderError.headerFieldNotPresent
+			throw DecodingError.keyNotFound(key, .init(codingPath: [key], debugDescription: "no http header for \(key)"))
 		}
 		guard let value = Int16(stringValue) else {
-			throw HTTPResponseDecoderError.incompatibleType
+			throw DecodingError.typeMismatch(type, .init(codingPath: [key], debugDescription: "unable to convert \(stringValue) to \(type)"))
 		}
 		return value
 	}
 	
 	func decode(_ type: Int32.Type, forKey key: Key) throws -> Int32 {
 		guard let stringValue = response.value(forHTTPHeaderField: key.stringValue) else {
-			throw HTTPResponseDecoderError.headerFieldNotPresent
+			throw DecodingError.keyNotFound(key, .init(codingPath: [key], debugDescription: "no http header for \(key)"))
 		}
 		guard let value = Int32(stringValue) else {
-			throw HTTPResponseDecoderError.incompatibleType
+			throw DecodingError.typeMismatch(type, .init(codingPath: [key], debugDescription: "unable to convert \(stringValue) to \(type)"))
 		}
 		return value
 	}
 	
 	func decode(_ type: Int64.Type, forKey key: Key) throws -> Int64 {
 		guard let stringValue = response.value(forHTTPHeaderField: key.stringValue) else {
-			throw HTTPResponseDecoderError.headerFieldNotPresent
+			throw DecodingError.keyNotFound(key, .init(codingPath: [key], debugDescription: "no http header for \(key)"))
 		}
 		guard let value = Int64(stringValue) else {
-			throw HTTPResponseDecoderError.incompatibleType
+			throw DecodingError.typeMismatch(type, .init(codingPath: [key], debugDescription: "unable to convert \(stringValue) to \(type)"))
 		}
 		return value
 	}
 	
 	func decode(_ type: UInt.Type, forKey key: Key) throws -> UInt {
 		guard let stringValue = response.value(forHTTPHeaderField: key.stringValue) else {
-			throw HTTPResponseDecoderError.headerFieldNotPresent
+			throw DecodingError.keyNotFound(key, .init(codingPath: [key], debugDescription: "no http header for \(key)"))
 		}
 		guard let value = UInt(stringValue) else {
-			throw HTTPResponseDecoderError.incompatibleType
+			throw DecodingError.typeMismatch(type, .init(codingPath: [key], debugDescription: "unable to convert \(stringValue) to \(type)"))
 		}
 		return value
 	}
 	
 	func decode(_ type: UInt8.Type, forKey key: Key) throws -> UInt8 {
 		guard let stringValue = response.value(forHTTPHeaderField: key.stringValue) else {
-			throw HTTPResponseDecoderError.headerFieldNotPresent
+			throw DecodingError.keyNotFound(key, .init(codingPath: [key], debugDescription: "no http header for \(key)"))
 		}
 		guard let value = UInt8(stringValue) else {
-			throw HTTPResponseDecoderError.incompatibleType
+			throw DecodingError.typeMismatch(type, .init(codingPath: [key], debugDescription: "unable to convert \(stringValue) to \(type)"))
 		}
 		return value
 	}
 	
 	func decode(_ type: UInt16.Type, forKey key: Key) throws -> UInt16 {
 		guard let stringValue = response.value(forHTTPHeaderField: key.stringValue) else {
-			throw HTTPResponseDecoderError.headerFieldNotPresent
+			throw DecodingError.keyNotFound(key, .init(codingPath: [key], debugDescription: "no http header for \(key)"))
 		}
 		guard let value = UInt16(stringValue) else {
-			throw HTTPResponseDecoderError.incompatibleType
+			throw DecodingError.typeMismatch(type, .init(codingPath: [key], debugDescription: "unable to convert \(stringValue) to \(type)"))
 		}
 		return value
 	}
 	
 	func decode(_ type: UInt32.Type, forKey key: Key) throws -> UInt32 {
 		guard let stringValue = response.value(forHTTPHeaderField: key.stringValue) else {
-			throw HTTPResponseDecoderError.headerFieldNotPresent
+			throw DecodingError.keyNotFound(key, .init(codingPath: [key], debugDescription: "no http header for \(key)"))
 		}
 		guard let value = UInt32(stringValue) else {
-			throw HTTPResponseDecoderError.incompatibleType
+			throw DecodingError.typeMismatch(type, .init(codingPath: [key], debugDescription: "unable to convert \(stringValue) to \(type)"))
 		}
 		return value
 	}
 	
 	func decode(_ type: UInt64.Type, forKey key: Key) throws -> UInt64 {
 		guard let stringValue = response.value(forHTTPHeaderField: key.stringValue) else {
-			throw HTTPResponseDecoderError.headerFieldNotPresent
+			throw DecodingError.keyNotFound(key, .init(codingPath: [key], debugDescription: "no http header for \(key)"))
 		}
 		guard let value = UInt64(stringValue) else {
-			throw HTTPResponseDecoderError.incompatibleType
+			throw DecodingError.typeMismatch(type, .init(codingPath: [key], debugDescription: "unable to convert \(stringValue) to \(type)"))
 		}
 		return value
 	}
 	
 	func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T : Decodable, T : LosslessStringConvertible {
 		guard let stringValue = response.value(forHTTPHeaderField: key.stringValue) else {
-			throw HTTPResponseDecoderError.headerFieldNotPresent
+			throw DecodingError.keyNotFound(key, .init(codingPath: [key], debugDescription: "no http header for \(key)"))
 		}
 		guard let converted = type.init(stringValue) else {
-			throw HTTPResponseDecoderError.incompatibleType
+			throw DecodingError.typeMismatch(type, .init(codingPath: [key], debugDescription: "unable to convert \(stringValue) to \(type)"))
 		}
 		return converted
 	}
@@ -277,7 +280,7 @@ struct HTTPHeadersKeyedDecodingContainer<Key> : KeyedDecodingContainerProtocol w
 	
 	func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T : Decodable {
 		guard let stringValue = response.value(forHTTPHeaderField: key.stringValue) else {
-			throw HTTPResponseDecoderError.headerFieldNotPresent
+			throw DecodingError.keyNotFound(key, .init(codingPath: [key], debugDescription: "no http header for \(key)"))
 		}
 		if let stringConvertible = type as? LosslessStringConvertible.Type {
 			if let value = stringConvertible.init(stringValue) as? T {
@@ -285,28 +288,28 @@ struct HTTPHeadersKeyedDecodingContainer<Key> : KeyedDecodingContainerProtocol w
 			}
 		}
 		guard let decoder = fieldDecoders[key.stringValue] else {
-			throw HTTPResponseDecoderError.noRegisteredFieldDecoder
+			throw DecodingError.dataCorruptedError(forKey: key, in: self, debugDescription: "No field decoder found for http header field \(key)")
 		}
 		
 		return try decoder.decode(type, from: stringValue)
 	}
 	
 	func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
-		throw HTTPResponseDecoderError.incompatibleType
+		throw DecodingError.dataCorrupted(.init(codingPath: [key], debugDescription: "NetworkDecoder does not support func func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: Key)"))
 	}
 	
 	func nestedUnkeyedContainer(forKey key: Key) throws -> UnkeyedDecodingContainer {
-		throw HTTPResponseDecoderError.incompatibleType
+		throw DecodingError.dataCorrupted(.init(codingPath: [key], debugDescription: "NetworkDecoder does not support func func nestedUnkeyedContainer(forKey key: Key)"))
 	}
 	
 	func superDecoder() throws -> Decoder {
 		//what?
-		throw HTTPResponseDecoderError.incompatibleType
+		throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "NetworkDecoder does not support func superDecoder()"))
 	}
 	
 	func superDecoder(forKey key: Key) throws -> Decoder {
 		//what?
-		throw HTTPResponseDecoderError.incompatibleType
+		throw DecodingError.dataCorrupted(.init(codingPath: [key], debugDescription: "NetworkDecoder does not support func superDecoder(forKey key: Key)"))
 	}
 }
 
