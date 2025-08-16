@@ -74,11 +74,27 @@ extension NSMutableAttributedString {
 		let (needsLeadingWhitespace, needsTrailingWhitespace) = mutableString.needsPrecautionaryWhitespace(string.string, at: range)
 		let stringToInsert = string.mutableCopy() as! NSMutableAttributedString
 		
+		var defaultAttributes:[NSAttributedString.Key : Any]?
+		if range.location < self.length {
+			defaultAttributes = self.attributes(at: range.location, effectiveRange: nil)
+		}
+		else if range.location > 0 {
+			defaultAttributes = self.attributes(at: range.location - 1, effectiveRange: nil)
+		}
+		
 		if needsLeadingWhitespace {
-			stringToInsert.insert(NSAttributedString(string: " ", attributes: string.attributes(at: 0, effectiveRange: nil)), at: 0)
+			var attributes:[NSAttributedString.Key : Any]?
+			if stringToInsert.length > 0 {
+				attributes = stringToInsert.attributes(at: 0, effectiveRange: nil)
+			}
+			stringToInsert.insert(NSAttributedString(string: " ", attributes: attributes ?? defaultAttributes ?? [:]), at: 0)
 		}
 		if needsTrailingWhitespace {
-			stringToInsert.insert(NSAttributedString(string: " ", attributes: string.attributes(at: stringToInsert.length, effectiveRange: nil)), at: stringToInsert.length)
+			var attributes:[NSAttributedString.Key : Any]?
+			if stringToInsert.length > 0 {
+				attributes = stringToInsert.attributes(at: stringToInsert.length-1, effectiveRange: nil)
+			}
+			stringToInsert.insert(NSAttributedString(string: " ", attributes: attributes ?? defaultAttributes ?? [:]), at: stringToInsert.length)
 		}
 		
 		replaceCharacters(in: range, with: stringToInsert)
